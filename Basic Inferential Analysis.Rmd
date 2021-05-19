@@ -1,0 +1,67 @@
+---
+title: "Basic Inferntial Data Analysis"
+author: "Aditi Madkaikar"
+date: "03/05/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Part 2: Basic Inferential Data Analysis
+
+## Purpose
+
+This part of the report is based on the basic Inferential Data Analysis. The main purpose here is to learn how to go about Inferential Data Analysis.
+
+
+### Part 2
+
+Here, the ToothGrowth dataset is used. The dataset is available in the datasets package. The first piece of code explains how to load the data, clean it and create a basci plot to visualise the data.
+
+```{r, echo=FALSE, warning=FALSE, results='hide', message=FALSE}
+library(rstatix)
+library(tidyverse)
+library(datasets)
+```
+
+```{r}
+data <- ToothGrowth
+head(data)
+tail(data)
+levels(data$supp)
+g <- ggplot(data, aes(x=dose, y= len, colour= supp))
+g <- g + geom_point()
+g
+```
+As one can see, the dataset contains three varible. The supp is a factor variable and the len and dose are values. 
+The supp variable has 2 levels namely "OJ" and "VC". 
+The dose varible has three values of doses names 0.5, 1.0 and 2.0.
+The objective here is to comapre Tooth Growth by supp and dose. To do so we are going to run hypothesis tests.
+
+```{r}
+stat.test <- data %>% 
+        group_by(dose) %>%
+        t_test(len ~ supp) %>%
+        add_significance()
+stat.test
+```
+ 
+In the segment and the next I am going to run two t-tests. In the first one, I am checking the significane of the differene in the length of the tooth with supp "OJ" and "VC" keeping the dose for each supp constant. The hypothesis here is that the length of the tooth in both supp is the same. Hence, the alternate hypothesis is that the length of the tooth is varying with the supp when the dose is held constant. As one can see, the length of the tooth is significantly different when the dose if 0.5 and 1.0 but that is not the case when the dose is 2.0. 
+
+```{r}
+stat.test1 <- data %>% 
+        group_by(supp) %>%
+        t_test(len ~ dose) %>%
+        add_significance()
+stat.test1
+```
+In this second t-test I am checking if the length of the tooth has any significant variation with each supp group based on the doses. Here, the null hypothesis is that in each supp the length of the tooth is the same for the different doses. Hence, the alternate hypothesis is that the length of the tooth is differnt for different doses. From the above test it can be seen that within a supp the different quantity of doses all have a significant effect on the lenth of the tooth. 
+
+### Conclusion for Part 2
+
+In the above tests, I am assuming a 95% confidence interval. And I am rejecting the null hypothesis is the p-value for a given test is <0.05. In words it means that the alternate hypothesis is chosen if there is more than 95% probability that the means of the lengths are different. 
+
+I can concluse that the for the same doses of diffrent supplemetns, the length of the tooth is significantly different for 0.5 and 1.0, whereas for 2.0 dose the length of the tooth not significantly different for both supp.
+
+Also, for the same supp all the doses have significant differnce on the length of the tooth. 

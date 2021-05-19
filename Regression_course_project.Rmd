@@ -1,0 +1,118 @@
+---
+title: "Linear Regression Course Project"
+author: "Aditi Madkaikar"
+date: "03/05/2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Motor Trends
+
+## A review on which transmission is better for Miles per Gallon 
+
+This report will try to answer two questions:
+
+
+1. Is automattic or manual transmittion better for Miles per Gallon (MPG)
+2. Quantify the MPG difference between the automatic oe manual transmittion
+
+### Loading the dataset and explaining the data.
+
+This next section is focused on loading the data and explaining each of the variable in the dataset. The data used here is the Motor Tres Car Road Tests(mtcars) dataset which is available in the datasets package of R. It was extracted from the 1974 Motor Trend US magazine. It consists of fuel comsumptions and 10 aspects of vehicle design and performance.
+
+```{r, results='hide', warning=FALSE, message=FALSE}
+library(datasets)
+library(tidyverse)
+library(ggfortify)
+library(car)
+```
+
+```{r}
+data <- mtcars
+```
+
+In the next section I'm going to make a few plots to carry out some exploratory analysis. Based on the outcomes of the plots, I am going to fit regression models for the data.
+```{r, warning=FALSE}
+data %>%
+        gather(-mpg, key = "variables", value = "value") %>% 
+        ggplot(aes(x = value, y = mpg)) +
+        geom_point() +
+        geom_smooth()+
+        facet_wrap(~variables, scales = "free") +
+        theme_bw()
+```
+
+The above graphs the y-axes is the mpg and the x-axes are the different variable. The kind colour is based on transmission. From the grapg it is clear that some variables are step variables and some are continuous variables. 
+
+
+The variables which are continuous are: 
+
+
+1. disp: Displacement
+2. drat: Rear axis ratio
+3. hp: Horsepower
+4. qsec: 1/4 mile time
+5. wt: weight (1000lbs)
+
+
+The discrete variables are:
+1. am: Transmission - Takes only the values 0 and 1
+2. cyl: Number of cylinders - Takes the values 4, 6, 8
+3. gear: Number of forward gears - Takes the values 3, 4, 5
+4. vs: Shape of Engine - Takes values 0 and 1
+5. carb: Number of carburetors - Takes values 1, 2, 3, 4, 6
+
+
+Also, from the above plots it can be seen that mileage per gallon is dependent on the type of transmission. Now to find the relation between mileage per gallon and the different parameters. I am not going to fit a simple linear regressin as the am variable is a step variable. Instead I amd going to fit multiple linear regrssion to try and identify other factors which could also affect mpg. I am going to start by fitting mpg vs all the other variables and then remove the variables which have less significance. Also, I am going to check for multicollinearity at every model. Here, I am attaching only 3 models.
+
+```{r}
+mod1 <- lm(mpg~., data)
+vif(mod1)
+```
+From the VIF and the it can be seen that cyl and disp are not required.
+
+```{r}
+mod2 <- lm(mpg~.-cyl-disp, data)
+summary(mod2)
+vif(mod2)
+```
+Looking at this model, I am goint to remove drat, hp vs, gear, qsec from the model. Fitting a third model as follows:
+
+```{r}
+mod3 <- lm(mpg~.-cyl-disp-hp-vs-gear-drat-carb, data)
+summary(mod3)
+vif(mod3)
+```
+
+Now, there's no problem of multicollinearity in the model. But, the intercept is not significant. Thus, we will accept the null hyphothesis and set the intercept as 0.
+
+```{r, warning= FALSE}
+model <- lm(mpg~.-cyl-disp-hp-vs-gear-drat-carb+0, data)
+autoplot(model)
+summary(model)
+vif(model)
+```
+
+Looking at the R-squared (adjusted) and the residual plots I am going to accept this model for the relationship between mpg and the transmssion.
+
+
+Now to quantify the difference between mean mileage per gallon of the different transmissions. For that I am going to use the Welch two-sided t-test and I am going to apply in on mpg of two kinds of transmission.
+
+```{r}
+t.test(filter(data, am==0)$mpg,filter(data, am==1)$mpg)
+```
+
+It can be seen that the differnce of the mean mileage per gallon is significant fot automatic and manual transmission. 
+
+
+## Conclusion
+
+From the above models and tests it can be seen tat exact quantification of the mileage diffrence between automatic and manual transmissions is not possible. This can be said as mpg is a continuous varibable whereas am is a step variable. At the best one can quantify the mean of automatic and manual transmissins. 
+
+
+But from the mean and the t-test for the individual transmission one can say with certainty that manual transmissin gives more mileage per gallon.

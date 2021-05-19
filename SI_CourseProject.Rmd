@@ -1,0 +1,45 @@
+---
+title: "Simulation Exercise"
+author: "Aditi Madkaikar"
+date: "05/04/2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Part1: Simulation Exercise
+
+## Purpose 
+
+This report helps one understand the distributions and comare with the Central Limit Theorom. The Central Limit Theorom states that in a popluation with mean u and standard deviation s if one takes a sufficiently large random samples with replacement, then the distribution of the means will be approximately randomly distributed.  
+
+### How to go about (for Part 1)
+First, calculate the mean and standard deviation of of the stimulated data. This is going to be large dataset. Next, take numerous samples, with replacement, and calculate the means of these samples. Then, calculate the mean and the standard deviation of the means of all the samples. The distribution of the sample means will be approximately a normal distribution. 
+
+Here we are going to carry out this experiment on the exponential distribution. The rate parameter will be lambda. To keep the results constant we are goint tp set the seed for this experiment. The lamda here is going to be 0.2. According to the propeties of the exponential distribution the expected mean is 1/lamda and the expected standard deviation is 1/lamda. Lastly, the number of sample is 40 and the number of stimulations is 1000.
+
+
+```{r }
+set.seed(123)
+
+lambda <- 0.2
+
+mns = NULL
+for (i in 1 : 1000) mns = c(mns, mean(rexp(40, lambda)))
+x <- seq(min(mns), max(mns), by= 0.2)
+hist(mns, freq = FALSE, breaks = 20, main = "Histogram overlayed with Standard Curve", xlab = "Mean of the sample")
+curve(dnorm(x, mean = 1/lambda, sd = 1/(lambda*sqrt(40))), add = T, lwd=2)
+
+print(paste("The experimental mean is:", mean(mns)))
+print(paste("Theorotical mean is:", 1/lambda))
+
+print(paste("The theorotical standard deviation is:", (1/(lambda*sqrt(40)))))
+print(paste("The experimental standard deviation is:", sd(mns)))
+```
+In the above piece of code we have applied the Central Limit Theorom to calculate the throrotical mean and standard deivation for the sample. The sample mean is the sample as the populatin mean and the sample stndard deviation is given by the standard error. 
+
+From the histogram attached one can see that the sample is approximately normally distributed. The figure also shows the ideal nomal distribution for a normal curve with mean = 5 and standard deivation = 0.79. 

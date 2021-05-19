@@ -1,0 +1,172 @@
+---
+title: "Analysis of Storm Data"
+author: "Chimu"
+date: "12/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Synopsis  
+ 
+The data is collected over multiple years. The analysis is carried out using various R packages to find out which type of disaster causes the maximum damage to life and property across the United States. This report makes an attempt on answering the following questions:  
+1. Which type of events are most harmful with respect to population health?
+2. Which events have the greatest economic consequences?
+
+The analysis is done my calculating the mean of the damage done by each of the events over all the years the values have been recorded. Missing values have not been replaced.  
+  
+
+The following report does the analyasia and reports which events do the maximum mean damage ovr the years.  
+
+## Data Processing:
+This section includes pre-processig of the data icluding the data input. In my report I have not used a line of code to download the data. Instead I have used pre-downloaded data saved in my working directory. If one wishes to reproduce my research they should download the data from the course webpage and then procede. The following piece of code loads the packages required and the data into R.   
+
+```{r loading_data, cache=TRUE, message=FALSE, warning=FALSE}
+library(readr)
+library(plyr)
+library(dplyr)
+
+in_data <- read_csv("repdata_data_StormData.csv.bz2")
+```
+
+This next piece of code finds out the column names of the dataset in an effort to find out which columns represent the damage to population and property.  
+
+```{r colnames, cache=TRUE}
+dim(in_data)
+colnames(in_data)
+```
+
+From the code above one can see that the columns FATALITIES and INJURIES represent the damage caused to the poplation whereas the columns PROPDMG and CROPDMG represent the damage to the economy.    
+
+The following piece of code truncates the dataset by choosing the relavent columns.  
+
+```{r total damage, cache=TRUE}
+filt_data <- select(in_data, BGN_DATE, EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, FATALITIES, INJURIES)
+rm(in_data)
+```
+
+The following code transforms the filtered dataset so that the Dates of beginning of the events are converted to the Date class and the year is stored. Along with it the the values of damage which are recorded in Million dollars are converted to Thousand dollars.  
+
+```{r mutate, cache=TRUE}
+filt_data <- mutate(filt_data, YEAR = format(as.Date(filt_data$BGN_DATE, "%m/%d/%Y %H:%M:%S"), "%Y"))
+filt_data <- mutate(filt_data, PROPDMG = ifelse(PROPDMGEXP == "M", PROPDMG*1000, PROPDMG))
+```
+
+The necxt piece of code finds out the fatalities caused by the events as well as the injuries caused and also the total damage done to the population. The mean of the annual damage caused by each of the events is recorded. Along with it the entries which have 0 values are recorded.  
+
+```{r sum pop, cache=TRUE}
+pop1 <- with(filt_data, tapply(FATALITIES, list(EVTYPE, YEAR), sum, na.rm = TRUE))
+pop2 <- with(filt_data, tapply(INJURIES, list(EVTYPE, YEAR), sum, na.rm = TRUE))
+
+pop <- pop1 + pop2
+
+pop0 <- apply(pop, 1, mean, na.rm = TRUE)
+pop11 <-apply(pop1, 1, mean, na.rm = TRUE)
+pop21 <-apply(pop2, 1, mean, na.rm = TRUE)
+
+pop01 <- which(pop0 == 0)
+pop12 <- which(pop11 == 0)
+pop22 <- which(pop21 == 0)
+```
+
+The necxt piece of code finds out the dammage to property caused by the events as well as the damage to crops caused and also the total economic damage. The mean of the annual damage caused by each of the events is recorded. Along with it the entries which have 0 values are recorded.  
+
+```{r sum2 dmg, cache=TRUE}
+dmg1 <- with(filt_data, tapply(PROPDMG, list(EVTYPE, YEAR), sum, na.rm = TRUE))
+dmg2 <- with(filt_data, tapply(CROPDMG, list(EVTYPE, YEAR), sum, na.rm = TRUE))
+
+dmg <- dmg1 + dmg2
+
+dmg0 <- apply(dmg, 1, mean, na.rm = T)
+dmg11 <- apply(dmg1, 1, mean, na.rm = T)
+dmg21 <- apply(dmg2, 1, mean, na.rm = T)
+
+dmg01 <- which(dmg0 == 0)
+dmg12 <- which(dmg11 == 0)
+dmg22 <- which(dmg21 == 0)
+```
+
+We have completed the processing of data. Now onto presenting the results.  
+
+## Results  
+
+Firstly, we report results for the damage done to the population.    
+The dmage to the population is presented graphically in a form of a barplot. The entries ehich have 0 value have been exluded. The plot has 3 subplots, the first is the total damage done to population, the second is the damage caused by fatalities and the third is damage caused by injuries.    
+
+```{r pop barplot, cache=TRUE}
+
+layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
+barplot(pop0[-pop01], main = "Total Health Damage", xlab = "Events", ylab = "Number of fatalites and Injuries")
+barplot(pop11[-pop12], main = "Fatalities", xlab = "Events", ylab = "Number of Fatalites")
+barplot(pop21[-pop22], main = "Injuries", xlab = "Events", ylab = "Number of Injuries")
+```
+
+Next, we report results for the economic damage done.    
+The economic dmage is presented graphically in a form of a barplot. The entries ehich have 0 value have been exluded. The plot has 3 subplots, the first is the total economic damage, the second is the enonomic damage to property and the third is damage caused to crops.  
+
+```{r dmg barplot, cache=TRUE}
+layout(matrix(c(1,1,2,3), 2, 2, byrow = TRUE))
+barplot(dmg0[-dmg01], main = "Total Damage", xlab = "Events", ylab = "Damage in Thousand Dollars ($ K)")
+barplot(dmg11[-dmg12], main = "Damage to Property", xlab = "Events", ylab = "Damage in Thousand Dollars ($ K)")
+barplot(dmg21[-dmg22], main = "Damage to Crops", xlab = "Events", ylab = "Damage in Thousand Dollars ($ K)")
+```
+
+The graphs for both indicate that most events have low damage or health impacts. The following piece of code finds out which event does maximum damage to life along with the amount of damage. It also displays the events which cause 10% of the maximum damage.  
+
+```{r pop highest, cache=TRUE}
+which.max(pop0)
+max(pop0)
+which(pop0 > 0.1*max(pop0))
+```
+
+Following code displys the events which cause 10% of the maximum damage. It also displys the individual maximum damages caused by fatalities.   
+
+```{r , cache=TRUE}
+which.max(pop11)
+max(pop11)
+which(pop11 > 0.1*max(pop11))
+```
+
+This code displys the individual maximum damages caused by injuries. It also displays the events which cause 10% of the maximum damage.  
+
+```{r, cache=TRUE}
+which.max(pop21)
+max(pop21)
+which(pop21 > 0.1*max(pop21))
+```
+
+The next piece of code finds out which event does maximum damage to ecocomy along with the amount of damage. It also displys the events which cause 10% of the maximum damage.  
+
+```{r dmg highest, cache=TRUE}
+which.max(dmg0)
+max(dmg0)
+which(dmg0 > 0.1*max(dmg0))
+```
+
+This code displys the individual maximum damage caused to prperty. It also displays the events which cause 10% of the maximum damage.  
+
+```{r , cache=TRUE}
+which.max(dmg11)
+max(dmg11)
+which(dmg11 > 0.1*max(dmg11))
+```
+
+This code displys the individual maximum damage caused to crops. It also displays the events which cause 10% of the maximum damage.  
+
+```{r, cache=TRUE}
+which.max(dmg21)
+max(dmg21)
+which(dmg21 > 0.1*max(dmg21))
+```
+
+The following is a graph of the events which cause 10% or more of the maximum damage caused to population a economy.  
+
+```{r cache=TRUE}
+par(mfrow = c(1, 2))
+barplot(pop0[which(pop0 > 0.01*max(pop0))], main = "Damage to population", xlab = "Events", ylab = "Number of injuroes and Fatalities")
+barplot(dmg0[which(dmg0 > 0.01*max(dmg0))], main = "Economic Damage", xlab = "Events", ylab = "Loses inccured in Thousand Dollars")
+par(mfrow = c(1,1))
+```
+
